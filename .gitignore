@@ -1,0 +1,11 @@
+# Results and caches created by running experiments or the demo
+demo_cache/
+cache_data/
+*.mat
+
+# Built toolbox package (rebuild with buildToolbox)
+release/
+
+# MATLAB autosave and macOS files
+*.asv
+.DS_Store
