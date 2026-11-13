@@ -1,6 +1,6 @@
 function MatDrWatson()
 % MATDRWATSON DrWatson.jl-style experiment management for MATLAB.
-%   Version 0.2.2
+%   Version 0.2.3
 %
 %   Parameter grids
 %     dictList       - Expand a struct of parameter values into all combinations.
