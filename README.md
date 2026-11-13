@@ -47,30 +47,18 @@ The examples and tests stay off the path on purpose: if they were on it, the exa
 
 ## Installation
 
-### Option A: download one file (recommended)
-
 1. Download **[MatDrWatson.mltbx](https://github.com/pitsianis/mat-dr-watson/releases/latest/download/MatDrWatson.mltbx)** from the [latest release](https://github.com/pitsianis/mat-dr-watson/releases/latest).
-2. In MATLAB, double-click the file in the Current Folder browser, or run (with the full path to the downloaded file):
+2. In MATLAB, double-click the file in the Current Folder browser, or run one of the following lines (with the full path to the downloaded file):
    ```matlab
    matlab.addons.install(fullfile(getenv("HOME"), "Downloads", "MatDrWatson.mltbx"))         % macOS, Linux
+   ```
+   ```matlab
    matlab.addons.install(fullfile(getenv("USERPROFILE"), "Downloads", "MatDrWatson.mltbx"))  % Windows
    ```
    Don't write the path as `"~/Downloads/..."`: `matlab.addons.install` fails on `~` with the misleading error "Argument must be a text scalar."
 
 That's all you need: the toolbox goes on the MATLAB path permanently, and the examples, the Experiment Manager template, and this README come with it. To upgrade, install a newer `.mltbx` the same way. To uninstall, use the Add-On Manager (**Home ▸ Add-Ons ▸ Manage Add-Ons**).
 
-### Option B: get the whole repository (to change the toolbox or run the tests)
-
-Clone it with git:
-```bash
-git clone https://github.com/pitsianis/mat-dr-watson.git
-```
-or, without git, click **Code ▸ Download ZIP** on the [repository page](https://github.com/pitsianis/mat-dr-watson) and unzip it anywhere. Then, in MATLAB, go to that folder and run:
-```matlab
-setupMatDrWatson              % for this MATLAB session
-setupMatDrWatson(Save=true)   % also for future sessions
-```
-To build the `.mltbx` yourself, run `buildToolbox` in the same folder (needs MATLAB R2023a or newer); it writes `release/MatDrWatson.mltbx`.
 
 ### Check the installation
 
