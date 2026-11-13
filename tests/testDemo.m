@@ -16,6 +16,12 @@ function testDemo(root)
         mode = 'plain loop';
     end
     pass(sprintf('example_sweep.m runs end to end (%s) and restores computePhysicsStep.m', mode));
+
+    overview = evalc('MatDrWatson');
+    assert(all(contains(overview, ["produceOrLoad", "dictList", "collectResults", "manageCache"])), ...
+        'MatDrWatson overview does not list the four functions');
+    assert(contains(evalc('help MatDrWatson'), 'example_sweep.m'), 'help MatDrWatson does not show how to open the demo');
+    pass('MatDrWatson and help MatDrWatson show the overview and the demo commands');
 end
 
 function out = runDemo()

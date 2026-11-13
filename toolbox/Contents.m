@@ -1,5 +1,5 @@
 % MatDrWatson: DrWatson.jl-style experiment management for MATLAB
-% Version 0.2.0 13-Nov-2026
+% Version 0.2.1 14-Nov-2026
 %
 % Parameter grids
 %   dictList       - Expand a struct of parameter values into all combinations.
@@ -13,5 +13,5 @@
 %   manageCache    - List saved runs, check them against the current code,
 %                    and delete stale ones.
 %
-% Type "doc <name>" or "help <name>" for details on each function.
-% Examples are in the examples folder of the repository (not on the path).
+% Type "help MatDrWatson" for this overview and how to open the demo, and
+% "help <name>" for details on each function.

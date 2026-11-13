@@ -27,7 +27,8 @@ mat-dr-watson/
 │   ├── produceOrLoad.m     Run an experiment or load its saved result (DrWatson's produce_or_load)
 │   ├── collectResults.m    All saved runs in one table (DrWatson's collect_results)
 │   ├── manageCache.m       List saved runs, check them against current code, clean stale ones
-│   ├── Contents.m          Toolbox overview and version
+│   ├── MatDrWatson.m       Overview shown by `help MatDrWatson`
+│   ├── Contents.m          Toolbox version
 │   └── private/            Internal helpers (hashing, dependency checks); never called directly
 ├── examples/               Runnable demo (not on the path)
 │   ├── example_sweep.m     The demo script
@@ -49,10 +50,12 @@ The examples and tests stay off the path on purpose: if they were on it, the exa
 ### Option A: download one file (recommended)
 
 1. Download **[MatDrWatson.mltbx](https://github.com/pitsianis/mat-dr-watson/releases/latest/download/MatDrWatson.mltbx)** from the [latest release](https://github.com/pitsianis/mat-dr-watson/releases/latest).
-2. In MATLAB, double-click the file in the Current Folder browser, or run:
+2. In MATLAB, double-click the file in the Current Folder browser, or run (with the full path to the downloaded file):
    ```matlab
-   matlab.addons.install("MatDrWatson.mltbx")   % path to the downloaded file
+   matlab.addons.install(fullfile(getenv("HOME"), "Downloads", "MatDrWatson.mltbx"))         % macOS, Linux
+   matlab.addons.install(fullfile(getenv("USERPROFILE"), "Downloads", "MatDrWatson.mltbx"))  % Windows
    ```
+   Don't write the path as `"~/Downloads/..."`: `matlab.addons.install` fails on `~` with the misleading error "Argument must be a text scalar."
 
 That's all you need: the toolbox goes on the MATLAB path permanently, and the examples, the Experiment Manager template, and this README come with it. To upgrade, install a newer `.mltbx` the same way. To uninstall, use the Add-On Manager (**Home ▸ Add-Ons ▸ Manage Add-Ons**).
 
@@ -75,12 +78,35 @@ Run `which produceOrLoad`. It should print a path ending in `toolbox/produceOrLo
 
 Then work from your own project folder, anywhere on disk: keep your experiment functions there and pass a cache folder such as `'cache_data'`, which is created relative to the current folder.
 
-### Running the Demo
+---
+
+## Getting Started
+
+### Getting help
 
 ```matlab
-run(fullfile(fileparts(fileparts(which("produceOrLoad"))), "examples", "example_sweep.m"))
+help MatDrWatson        % overview of the toolbox
+help produceOrLoad      % details of one function (also dictList, collectResults, manageCache)
 ```
-This finds the examples folder next to the installed toolbox, so it works with either installation method and from any current folder. The demo writes its results to `examples/demo_cache`. It starts with `clear`, so it empties your workspace.
+
+### Looking at and running the demo
+
+The examples folder sits next to the installed toolbox, but is not on the path. These lines find it with either installation method, from any current folder:
+
+```matlab
+exampleDir = fullfile(fileparts(fileparts(which("produceOrLoad"))), "examples");
+edit(fullfile(exampleDir, "example_sweep.m"))   % the demo script
+edit(fullfile(exampleDir, "simulateDecay.m"))   % the experiment it runs
+run(fullfile(exampleDir, "example_sweep.m"))    % run the demo
+```
+
+The demo writes its results to `examples/demo_cache`. It starts with `clear`, so it empties your workspace.
+
+To change the examples or use them as a starting point, copy them to your own folder first, because edits to the installed copy are lost when you upgrade the toolbox:
+
+```matlab
+copyfile(exampleDir, "my_examples")
+```
 
 ---
 
