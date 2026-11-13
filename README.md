@@ -31,29 +31,47 @@ mat-dr-watson/
 │   └── private/            Internal helpers (hashing, dependency checks); never called directly
 ├── examples/               Runnable demo (not on the path)
 │   ├── example_sweep.m     The demo script
-│   ├── runExperiment.m     Example experiment function
-│   └── computePhysicsStep.m  Helper it calls (edited by the demo to show change detection)
+│   ├── simulateDecay.m     Example experiment function
+│   ├── computePhysicsStep.m  Helper it calls (edited by the demo to show change detection)
+│   └── experiment_manager/
+│       └── ExperimentFunctionTemplate.m  Template for using the toolbox from Experiment Manager
 ├── tests/                  Automated tests (see "Running the Tests")
 ├── setupMatDrWatson.m      Puts toolbox/ on the path
 └── buildToolbox.m          Builds release/MatDrWatson.mltbx for distribution
 ```
 
-The examples and tests stay off the path on purpose: if they were on it, the example's `runExperiment.m` could shadow, or be shadowed by, a student's own file of the same name.
+The examples and tests stay off the path on purpose: if they were on it, the example's `simulateDecay.m` could shadow, or be shadowed by, a student's own file of the same name.
 
 ---
 
 ## Installation
 
-Pick one:
+### Option A: download one file (recommended)
 
-* **Install the `.mltbx` (recommended for students).** Double-click `MatDrWatson.mltbx` in MATLAB, or run `matlab.addons.install("MatDrWatson.mltbx")`. This puts the toolbox on the path permanently, and the Add-On Manager can uninstall or upgrade it. To build the file, run `buildToolbox` in the repository folder (needs MATLAB R2023a or newer); it writes `release/MatDrWatson.mltbx`.
-* **Use the repository folder directly.** From the repository folder run:
-  ```matlab
-  setupMatDrWatson              % for this MATLAB session
-  setupMatDrWatson(Save=true)   % also for future sessions
-  ```
+1. Download **[MatDrWatson.mltbx](https://github.com/pitsianis/mat-dr-watson/releases/latest/download/MatDrWatson.mltbx)** from the [latest release](https://github.com/pitsianis/mat-dr-watson/releases/latest).
+2. In MATLAB, double-click the file in the Current Folder browser, or run:
+   ```matlab
+   matlab.addons.install("MatDrWatson.mltbx")   % path to the downloaded file
+   ```
 
-Check the installation with `which produceOrLoad`, which should print a path ending in `toolbox/produceOrLoad.m`.
+That's all you need: the toolbox goes on the MATLAB path permanently, and the examples, the Experiment Manager template, and this README come with it. To upgrade, install a newer `.mltbx` the same way. To uninstall, use the Add-On Manager (**Home ▸ Add-Ons ▸ Manage Add-Ons**).
+
+### Option B: get the whole repository (to change the toolbox or run the tests)
+
+Clone it with git:
+```bash
+git clone https://github.com/pitsianis/mat-dr-watson.git
+```
+or, without git, click **Code ▸ Download ZIP** on the [repository page](https://github.com/pitsianis/mat-dr-watson) and unzip it anywhere. Then, in MATLAB, go to that folder and run:
+```matlab
+setupMatDrWatson              % for this MATLAB session
+setupMatDrWatson(Save=true)   % also for future sessions
+```
+To build the `.mltbx` yourself, run `buildToolbox` in the same folder (needs MATLAB R2023a or newer); it writes `release/MatDrWatson.mltbx`.
+
+### Check the installation
+
+Run `which produceOrLoad`. It should print a path ending in `toolbox/produceOrLoad.m`.
 
 Then work from your own project folder, anywhere on disk: keep your experiment functions there and pass a cache folder such as `'cache_data'`, which is created relative to the current folder.
 
@@ -88,20 +106,20 @@ paramGrid = dictList(spec); % Returns a 1x12 struct array
 ### 2. Run & Cache Simulations (`produceOrLoad`)
 ```matlab
 for i = 1:numel(paramGrid)
-    [res, meta] = produceOrLoad(@runExperiment, paramGrid(i), 'cache_data');
+    [res, meta] = produceOrLoad(@simulateDecay, paramGrid(i), 'cache_data');
 end
 ```
-* **First run:** Executes `runExperiment` and saves `runExperiment_<hash>.mat`.
+* **First run:** Executes `simulateDecay` and saves `simulateDecay_<hash>.mat`.
 * **Subsequent runs:** Loads instantly from disk if parameters and all helper `.m` files are unchanged.
 * **After editing code:** The edit is detected automatically on the next call (also on parallel workers) and the affected runs are recomputed.
 * **Parallel execution:** Safe inside `parfor` and `parfeval` because saves use atomic temp-file renames.
-* **Your function** must be a named function that takes the params struct as its only input and returns the result. Put it in its own file: a local function also works, but then its whole file counts as code, so editing anything in that file (say, the plotting part of your sweep script) makes every run stale. Anonymous functions such as `@(p) runExperiment(p, K)` are rejected, because a change to `K` would not be noticed. Put every setting into `params` instead.
+* **Your function** must be a named function that takes the params struct as its only input and returns the result. Put it in its own file: a local function also works, but then its whole file counts as code, so editing anything in that file (say, the plotting part of your sweep script) makes every run stale. Anonymous functions such as `@(p) simulateDecay(p, K)` are rejected, because a change to `K` would not be noticed. Put every setting into `params` instead.
 * **Parameter values** may be numbers, logicals, text, cells, and structs, nested as deep as you like. Every difference counts: `Inf` vs `NaN`, `int8(1)` vs `1`, `'x'` vs `"x"`, and row vs column vectors all give separate runs. Function handles, `datetime`, `categorical`, and other objects raise an error; store them as text instead (e.g. `params.method = "rk4"`).
 
 ### 3. Collect Results into a Table (`collectResults`)
 ```matlab
 tbl = collectResults('cache_data');                      % every run in the folder
-tbl = collectResults('cache_data', FuncHandle=@runExperiment, OnlyCurrent=true);
+tbl = collectResults('cache_data', FuncHandle=@simulateDecay, OnlyCurrent=true);
 
 scatter(tbl.alpha, tbl.finalValue)                       % parameters and results are columns
 ```
@@ -122,7 +140,7 @@ manageCache('cache_data', 'clean', DryRun=true);
 manageCache('cache_data', 'clean');
 
 % Only list/clean runs of one function (others in the same folder are left alone)
-manageCache('cache_data', 'clean', FuncHandle=@runExperiment);
+manageCache('cache_data', 'clean', FuncHandle=@simulateDecay);
 ```
 
 Each run remembers the files it depended on, so `manageCache` and `collectResults` check every run against its own dependencies, including `ExtraFiles`. Status values:
@@ -138,6 +156,43 @@ Each run remembers the files it depended on, so `manageCache` and `collectResult
 
 ---
 
+## Using Experiment Manager (optional)
+
+MATLAB's [Experiment Manager](https://www.mathworks.com/help/matlab/ref/experimentmanager-app.html) app (included in MATLAB R2023b and newer) lets you define the parameter grid in a table, run the trials one at a time or in parallel, and browse the results, all without writing a loop. Combined with `produceOrLoad`, rerunning an experiment only recomputes the trials whose parameters or code changed; all others load instantly from disk.
+
+Experiment Manager replaces `dictList` and the loop. `produceOrLoad` does the saving and reloading, and `collectResults` and `manageCache` work on the saved runs as usual.
+
+### Setting it up with the example
+
+1. Make sure the toolbox is installed (`which produceOrLoad` prints a path).
+2. Open the app with `experimentManager`, click **Blank Project**, choose the **General Purpose** template, and pick a folder and name for the project.
+3. Copy `examples/simulateDecay.m` and `examples/computePhysicsStep.m` into the project folder. For your own work, copy your experiment function and its helpers instead.
+4. In the experiment's **Parameters** table, add:
+
+   | Name | Values |
+   |---|---|
+   | `x0` | `10` |
+   | `T` | `1` |
+   | `dt` | `0.01` |
+   | `alpha` | `[0.5 1 2 4]` |
+   | `tag` | `["baseline" "control"]` |
+
+5. Open the experiment function that Experiment Manager created (for example `Experiment1Function1.m`). Replace its contents with those of `examples/experiment_manager/ExperimentFunctionTemplate.m`, but keep the function name Experiment Manager gave it in the first line.
+6. Click **Run**. The results table shows `finalValue` and `fromCache` for each of the 8 trials.
+7. Click **Run** again: every trial shows `fromCache` = true and finishes almost instantly. Now change `damping = 1.0;` in the project's copy of `computePhysicsStep.m` and run once more: every trial is recomputed.
+8. To analyze the runs outside the app, use `collectResults(fullfile(currentProject().RootFolder, "cache_data"))`.
+
+To use your own experiment function, replace `@simulateDecay` in the template, and change the outputs (`finalValue` in the example) to the result fields you want as columns in the results table.
+
+### Things to know
+
+* **Parallel trials:** parallel workers may not have the project loaded, so the template's default cache folder (`<project root>/cache_data`) fails there with an error that says so. Before running in parallel, set `cacheDir` near the top of the experiment function to an absolute path, such as `"/Users/me/my_project/cache_data"`.
+* **Text parameters:** Experiment Manager passes text as strings (`"baseline"`), while `spec.tag = {'baseline'}` in `dictList` passes chars (`'baseline'`), and the two get different cache keys. To share saved runs between scripts and Experiment Manager, use string arrays in scripts too: `spec.tag = ["baseline" "control"]`.
+* **Two copies of the outputs:** Experiment Manager keeps the values the experiment function returns in its own results, inside the project. The complete results of every run are in `cache_data`.
+* **Initialization functions:** if the experiment has an initialization function, Experiment Manager adds its output to `params` as `InitializationFunctionOutput`. The template removes that field before calling `produceOrLoad`, so it isn't part of the cache key and isn't passed to your experiment function.
+
+---
+
 ## Requirements and Limitations
 
 * **MATLAB version:** R2021a or newer (the `Name=Value` call syntax). Tested on R2026a.
@@ -146,7 +201,7 @@ Each run remembers the files it depended on, so `manageCache` and `collectResult
   ```matlab
   for i = 1:numel(paramGrid)
       try
-          produceOrLoad(@runExperiment, paramGrid(i), 'cache_data');
+          produceOrLoad(@simulateDecay, paramGrid(i), 'cache_data');
       catch err
           fprintf('Run %d failed: %s\n', i, err.message);
       end
@@ -167,4 +222,4 @@ From the repository folder:
 addpath tests
 runAllTests
 ```
-The tests run in a temporary copy of the toolbox and examples, so your files and cache folders are never touched, and the toolbox does not need to be installed. They check code-change detection, `manageCache`, `collectResults`, cache keys, input validation, `parfor`, and the demo, and end with `All 3 test groups passed.` The `parfor` test is skipped without the Parallel Computing Toolbox. Run them after changing any toolkit file.
+The tests run in a temporary copy of the toolbox and examples, so your files and cache folders are never touched, and the toolbox does not need to be installed. They check code-change detection, `manageCache`, `collectResults`, cache keys, input validation, `parfor`, the Experiment Manager template, and the demo, and end with `All 4 test groups passed.` The `parfor` test is skipped without the Parallel Computing Toolbox, and the template test is skipped while a MATLAB project is open (creating its test project would close yours). Run them after changing any toolkit file.

@@ -6,7 +6,7 @@ function testCacheStatus(root)
     simParams = @(alpha) struct('x0', 1, 'T', 1, 'dt', 0.1, 'alpha', alpha);
     g = dictList(struct('alpha', [1 2]));
     for i = 1:2
-        produceOrLoad(@runExperiment, simParams(g(i).alpha), c, Verbose=false);
+        produceOrLoad(@simulateDecay, simParams(g(i).alpha), c, Verbose=false);
         produceOrLoad(@runOther, g(i), c, Verbose=false);
         produceOrLoad(@runWithData, g(i), c, ExtraFiles="data/scale.txt", Verbose=false);
     end
@@ -21,14 +21,14 @@ function testCacheStatus(root)
     assert(all(t.Status == "CURRENT"), 'Status changed when checked from another folder');
     pass('status is correct when checked from another folder');
 
-    % Edit a helper used only by runExperiment, without `clear produceOrLoad`.
+    % Edit a helper used only by simulateDecay, without `clear produceOrLoad`.
     helper = fullfile(root, 'computePhysicsStep.m');
     dataFile = fullfile(root, 'data', 'scale.txt');
     origHelper = fileread(helper);
     origData = fileread(dataFile);
     restoreFiles = onCleanup(@() cellfun(@writeFile, {helper, dataFile}, {origHelper, origData})); %#ok<NASGU>
     writeFile(helper, strrep(origHelper, 'damping = 1.0;', 'damping = 1.5;'));
-    [~, m] = produceOrLoad(@runExperiment, simParams(1), c, Verbose=false);
+    [~, m] = produceOrLoad(@simulateDecay, simParams(1), c, Verbose=false);
     assert(~m.fromCache, 'Edit to computePhysicsStep.m was not detected');
     pass('code edit detected without `clear produceOrLoad`');
 

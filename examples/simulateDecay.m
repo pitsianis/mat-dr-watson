@@ -1,5 +1,5 @@
-function out = runExperiment(params)
-% RUNEXPERIMENT Sample simulation calling computePhysicsStep.
+function out = simulateDecay(params)
+% SIMULATEDECAY Example experiment: exponential decay, using computePhysicsStep.
     x = params.x0;
     nSteps = round(params.T / params.dt);
     trace = zeros(1, nSteps + 1);

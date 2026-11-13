@@ -23,7 +23,7 @@ function tbl = collectResults(cacheDir, options)
 %       Verbose     - Print a summary line (default: true)
 %
 %   Example:
-%       tbl = collectResults('cache_data', FuncHandle=@runExperiment, OnlyCurrent=true);
+%       tbl = collectResults('cache_data', FuncHandle=@simulateDecay, OnlyCurrent=true);
 %       scatter(tbl.alpha, tbl.finalValue)
 
     arguments

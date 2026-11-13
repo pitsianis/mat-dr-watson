@@ -10,7 +10,7 @@ if exist('produceOrLoad', 'file') ~= 2
 end
 
 % Everything this demo writes stays next to this script, wherever MATLAB's
-% current folder is. cd'ing here also makes runExperiment.m and
+% current folder is. cd'ing here also makes simulateDecay.m and
 % computePhysicsStep.m visible (they are deliberately not on the path).
 exampleDir = fileparts(mfilename('fullpath'));
 cd(exampleDir);
@@ -33,13 +33,13 @@ fprintf('Generated %d parameter combinations via dictList.\n\n', numel(paramGrid
 fprintf('--- STEP 1: Initial Sweep (All Cache Misses) ---\n');
 results = cell(1, numel(paramGrid));
 for i = 1:numel(paramGrid)
-    results{i} = produceOrLoad(@runExperiment, paramGrid(i), cacheFolder);
+    results{i} = produceOrLoad(@simulateDecay, paramGrid(i), cacheFolder);
 end
 
 %% 3. Re-run Sweep (All Cache Hits)
 fprintf('\n--- STEP 2: Re-running Identical Sweep (All Cache Hits) ---\n');
 for i = 1:numel(paramGrid)
-    results{i} = produceOrLoad(@runExperiment, paramGrid(i), cacheFolder);
+    results{i} = produceOrLoad(@simulateDecay, paramGrid(i), cacheFolder);
 end
 
 %% 4. Sweep Again, in Parallel if Possible (Adding new alpha = 4.0)
@@ -103,12 +103,12 @@ function metas = runSweep(grid, cacheFolder, usePool)
     if usePool
         futures(numel(grid)) = parallel.FevalFuture;
         for i = 1:numel(grid)
-            futures(i) = parfeval(@produceOrLoad, 2, @runExperiment, grid(i), cacheFolder);
+            futures(i) = parfeval(@produceOrLoad, 2, @simulateDecay, grid(i), cacheFolder);
         end
         [~, metas] = fetchOutputs(futures);
     else
         for i = 1:numel(grid)
-            [~, metas(i)] = produceOrLoad(@runExperiment, grid(i), cacheFolder); %#ok<AGROW>
+            [~, metas(i)] = produceOrLoad(@simulateDecay, grid(i), cacheFolder); %#ok<AGROW>
         end
     end
 end

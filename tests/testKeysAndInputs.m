@@ -70,12 +70,12 @@ function testKeysAndInputs(root)
     g = dictList(struct('x0', 1, 'T', 1, 'dt', 0.1, 'alpha', [1 2 3 4]));
     fromCache = false(1, numel(g));
     parfor i = 1:numel(g)
-        [~, mm] = produceOrLoad(@runExperiment, g(i), c, Verbose=false);
+        [~, mm] = produceOrLoad(@simulateDecay, g(i), c, Verbose=false);
         fromCache(i) = mm.fromCache;
     end
     assert(~any(fromCache), 'First parfor sweep should compute every run');
     parfor i = 1:numel(g)
-        [~, mm] = produceOrLoad(@runExperiment, g(i), c, Verbose=false);
+        [~, mm] = produceOrLoad(@simulateDecay, g(i), c, Verbose=false);
         fromCache(i) = mm.fromCache;
     end
     assert(all(fromCache), 'Second parfor sweep should load every run from the cache');

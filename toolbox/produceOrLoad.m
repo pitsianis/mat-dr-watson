@@ -5,7 +5,7 @@ function [result, meta] = produceOrLoad(funcHandle, params, cacheDir, options)
 %   [result, meta] = produceOrLoad(funcHandle, params, cacheDir, Name=Value)
 %
 %   Inputs:
-%       funcHandle - Handle to a named function, e.g. @runExperiment.
+%       funcHandle - Handle to a named function, e.g. @simulateDecay.
 %                    Anonymous functions (@(p) ...) and nested functions are
 %                    rejected: values they capture are invisible to the cache.
 %                    Put every setting the run depends on into params instead.
@@ -35,7 +35,7 @@ function [result, meta] = produceOrLoad(funcHandle, params, cacheDir, options)
     funcType = functions(funcHandle).type;
     if ismember(funcType, {'anonymous', 'nested'})
         error('produceOrLoad:UnsupportedFunction', ...
-            ['produceOrLoad needs a handle to a named function, such as @runExperiment, ' ...
+            ['produceOrLoad needs a handle to a named function, such as @simulateDecay, ' ...
              'not a %s function (%s). Values captured by such a function are not part ' ...
              'of the cache key, so changing them would silently return old results. ' ...
              'Move those values into the params struct instead.'], funcType, func2str(funcHandle));

@@ -6,11 +6,13 @@ function runAllTests()
 %       runAllTests
 %
 %   Nothing in your project folder is changed: toolbox/ is copied to a
-%   temporary folder, examples/ and tests/fixtures/ are copied next to it,
-%   the tests run there with the copied toolbox first on the path (ahead of
-%   any installed MatDrWatson), and the folder is deleted afterwards.
-%   The tests do not need the toolbox to be installed. Tests that need a parallel
-%   pool are skipped when the Parallel Computing Toolbox is not available.
+%   temporary folder, examples/ (with experiment_manager/) and
+%   tests/fixtures/ are copied next to it, the tests run there with the
+%   copied toolbox first on the path (ahead of any installed MatDrWatson),
+%   and the folder is deleted afterwards. The tests do not need the toolbox
+%   to be installed. Tests that need a parallel pool are skipped when the
+%   Parallel Computing Toolbox is not available, and the Experiment Manager
+%   template test is skipped while a MATLAB project is open.
 %   Takes about a minute, mostly for starting the parallel pool.
 
     testsDir = fileparts(mfilename('fullpath'));
@@ -23,6 +25,7 @@ function runAllTests()
     for i = 1:numel(exampleFiles)
         copyfile(fullfile(exampleFiles(i).folder, exampleFiles(i).name), sandbox);
     end
+    copyfile(fullfile(projectDir, 'examples', 'experiment_manager'), fullfile(sandbox, 'experiment_manager'));
     copyfile(fullfile(testsDir, 'fixtures'), sandbox);
 
     oldDir = pwd;
@@ -33,7 +36,7 @@ function runAllTests()
     cd(sandbox);
     setPoolFolder(sandbox);
 
-    tests = {@testCacheStatus, @testKeysAndInputs, @testDemo};
+    tests = {@testCacheStatus, @testKeysAndInputs, @testExperimentTemplate, @testDemo};
     failed = strings(1, 0);
     for k = 1:numel(tests)
         name = func2str(tests{k});

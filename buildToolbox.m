@@ -29,7 +29,7 @@ function mltbxFile = buildToolbox(version)
     opts.MinimumMatlabRelease = "R2021a";
     % List the example's .m files explicitly, so a demo_cache folder left
     % over from running the demo is not packaged.
-    exampleFiles = dir(fullfile(root, "examples", "*.m"));
+    exampleFiles = dir(fullfile(root, "examples", "**", "*.m"));
     opts.ToolboxFiles = [fullfile(root, "toolbox"), ...
                          string(fullfile({exampleFiles.folder}, {exampleFiles.name})), ...
                          fullfile(root, "README.md")];
