@@ -5,7 +5,9 @@ function tbl = collectResults(cacheDir, options)
 %   tbl = collectResults(cacheDir)
 %   tbl = collectResults(cacheDir, Name=Value)
 %
-%   One row per cached run, sorted by parameter values. Columns, in order:
+%   One row per cached run, sorted by parameter values. Runs with the same
+%   parameters (e.g. before and after a code edit) list the CURRENT run
+%   first, then the others newest first. Columns, in order:
 %     * one per parameter (nested structs are flattened: p.solver.tol -> solver_tol)
 %     * one per field of the result struct (flattened the same way; a
 %       non-struct result becomes a single column named "result"; a result
@@ -121,11 +123,16 @@ function tbl = collectResults(cacheDir, options)
     end
 
     % Sort rows by the parameter columns that hold scalars (cache files are
-    % named by hash, so the file order is meaningless).
+    % named by hash, so the file order is meaningless). Runs with the same
+    % parameters come out CURRENT first, then the rest newest first, so the
+    % up-to-date result is always the first row of its group.
     sortCols = paramCols(arrayfun(@(name) ~iscell(tbl.(name)), paramCols));
-    if ~isempty(sortCols)
-        tbl = sortrows(tbl, cellstr(sortCols));
-    end
+    rankCol = matlab.lang.makeUniqueStrings("sortRank", tbl.Properties.VariableNames);
+    tbl.(rankCol) = double(tbl.Status ~= "CURRENT");
+    keys = [sortCols, rankCol, "CreatedAt"];
+    directions = [repmat("ascend", 1, numel(sortCols) + 1), "descend"];
+    tbl = sortrows(tbl, cellstr(keys), cellstr(directions));
+    tbl.(rankCol) = [];
 
     if options.Verbose
         msg = sprintf('[collectResults] Collected %d run(s) from "%s"', nRows, cacheDir);

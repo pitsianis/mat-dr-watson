@@ -27,10 +27,24 @@ function testCacheStatus(root)
     origHelper = fileread(helper);
     origData = fileread(dataFile);
     restoreFiles = onCleanup(@() cellfun(@writeFile, {helper, dataFile}, {origHelper, origData})); %#ok<NASGU>
+    cOrder = fullfile(root, 'cache_order');   % 8 runs before and 8 after the edit
+    for alpha = 1:8
+        produceOrLoad(@simulateDecay, simParams(alpha), cOrder, Verbose=false);
+    end
     writeFile(helper, strrep(origHelper, 'damping = 1.0;', 'damping = 1.5;'));
     [~, m] = produceOrLoad(@simulateDecay, simParams(1), c, Verbose=false);
     assert(~m.fromCache, 'Edit to computePhysicsStep.m was not detected');
     pass('code edit detected without `clear produceOrLoad`');
+
+    for alpha = 1:8
+        produceOrLoad(@simulateDecay, simParams(alpha), cOrder, Verbose=false);
+    end
+    r = collectResults(cOrder, Verbose=false);
+    assert(height(r) == 16, 'Expected 16 runs, got %d', height(r));
+    assert(isequal(r.alpha, repelem((1:8)', 2)), 'Rows are not sorted by parameter value');
+    assert(all(r.Status(1:2:end) == "CURRENT") && all(r.Status(2:2:end) == "STALE_CODE"), ...
+        'Within equal parameters, the CURRENT run is not listed first');
+    pass('collectResults lists the CURRENT run first among runs with equal parameters');
 
     t = manageCache(c, 'list', FuncHandle=@runOther);
     assert(height(t) == 2 && all(t.Function == "runOther"), 'FuncHandle did not filter the listing');

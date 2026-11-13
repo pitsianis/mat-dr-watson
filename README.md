@@ -94,7 +94,7 @@ tbl = collectResults('cache_data', FuncHandle=@simulateDecay, OnlyCurrent=true);
 
 scatter(tbl.alpha, tbl.finalValue)                       % parameters and results are columns
 ```
-* One row per run, sorted by parameter values.
+* One row per run, sorted by parameter values. When the same parameters were run more than once (for example before and after a code edit), the current run comes first, then the older ones, newest first.
 * Scalar numbers and text become normal columns; vectors, matrices, and structs become cell columns (e.g. `tbl.trace{1}`).
 * Nested structs are flattened: `params.solver.tol` becomes column `solver_tol`.
 * `OnlyCurrent=true` skips runs produced by older versions of your code.
