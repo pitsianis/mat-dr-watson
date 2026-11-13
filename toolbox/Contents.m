@@ -1,5 +1,5 @@
 % MatDrWatson: DrWatson.jl-style experiment management for MATLAB
-% Version 0.2.1 14-Nov-2026
+% Version 0.2.2 14-Nov-2026
 %
 % Parameter grids
 %   dictList       - Expand a struct of parameter values into all combinations.

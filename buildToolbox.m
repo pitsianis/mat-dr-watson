@@ -1,7 +1,7 @@
 function mltbxFile = buildToolbox(version)
 % BUILDTOOLBOX Packages MatDrWatson as an installable .mltbx file.
 %
-%   buildToolbox            % version 0.2.1
+%   buildToolbox            % version 0.2.2
 %   buildToolbox("0.3.0")   % set the version
 %
 %   Writes release/MatDrWatson.mltbx. Students install it by double-clicking
@@ -13,7 +13,7 @@ function mltbxFile = buildToolbox(version)
 %   R2021a or newer.
 
     arguments
-        version (1,1) string = "0.2.1"
+        version (1,1) string = "0.2.2"
     end
 
     root = fileparts(mfilename('fullpath'));

@@ -41,6 +41,14 @@ function [result, meta] = produceOrLoad(funcHandle, params, cacheDir, options)
              'Move those values into the params struct instead.'], funcType, func2str(funcHandle));
     end
 
+    funcFile = functionFile(funcHandle);
+    if funcFile == ""
+        error('produceOrLoad:FunctionFileNotFound', ...
+            ['Cannot find the file that defines %s. produceOrLoad needs it to track ' ...
+             'code changes. Check that the function''s .m file is on the MATLAB path ' ...
+             'or in the current folder.'], func2str(funcHandle));
+    end
+
     if ~isfolder(cacheDir)
         mkdir(cacheDir);
     end
@@ -57,7 +65,7 @@ function [result, meta] = produceOrLoad(funcHandle, params, cacheDir, options)
         error('produceOrLoad:MissingExtraFile', 'ExtraFiles not found: %s', strjoin(missingExtra, ', '));
     end
     extraFiles = absolutePaths(extraFiles);
-    [codeHash, depFiles] = getDependencyHash(funcHandle, extraFiles);
+    [codeHash, depFiles] = getDependencyHash(funcFile, extraFiles);
 
     % 3. Build deterministic cache key and file path
     funcName = regexprep(func2str(funcHandle), '[^a-zA-Z0-9_]', '_');
@@ -90,6 +98,11 @@ function [result, meta] = produceOrLoad(funcHandle, params, cacheDir, options)
     if options.Verbose
         fprintf('[produceOrLoad] CACHE MISS: Running %s -> %s\n', funcName, cacheFile);
     end
+    % Parallel workers keep using a function's old code after its file is
+    % edited, until rehash makes them check the files on disk again. Without
+    % this, a rerun triggered by a code change could execute the old code and
+    % save its result under the new code's key.
+    rehash;
     tStart = tic;
     result = funcHandle(params);
     elapsedSec = toc(tStart);
@@ -132,7 +145,7 @@ function sOut = canonicalizeStruct(sIn)
     end
 end
 
-function [codeHash, depFiles] = getDependencyHash(funcHandle, extraFiles)
+function [codeHash, depFiles] = getDependencyHash(funcFile, extraFiles)
 % The dependency list and hash are cached in memory per function, because
 % requiredFilesAndProducts is slow. Every call re-checks the modification time
 % and size of each cached dependency, so an edited file is picked up
@@ -143,12 +156,7 @@ function [codeHash, depFiles] = getDependencyHash(funcHandle, extraFiles)
         depCache = containers.Map('KeyType', 'char', 'ValueType', 'any');
     end
 
-    funcInfo = functions(funcHandle);
-    if ~isempty(funcInfo.file)
-        cacheKey = [funcInfo.file '|' char(strjoin(extraFiles, ';'))];
-    else
-        cacheKey = [func2str(funcHandle) '|' char(strjoin(extraFiles, ';'))];
-    end
+    cacheKey = char(funcFile + "|" + strjoin(extraFiles, ';'));
 
     if isKey(depCache, cacheKey)
         cached = depCache(cacheKey);
@@ -161,11 +169,7 @@ function [codeHash, depFiles] = getDependencyHash(funcHandle, extraFiles)
         % have added or removed calls) and rehash.
     end
 
-    if ~isempty(funcInfo.file) && isfile(funcInfo.file)
-        reqFiles = matlab.codetools.requiredFilesAndProducts(funcInfo.file);
-    else
-        reqFiles = {};
-    end
+    reqFiles = matlab.codetools.requiredFilesAndProducts(char(funcFile));
 
     allFiles = unique([string(reqFiles(:)); extraFiles(:)]);
     allFiles = allFiles(allFiles ~= "");
@@ -185,5 +189,19 @@ function p = absolutePaths(p)
     for i = 1:numel(p)
         d = dir(p(i));
         p(i) = string(fullfile(d.folder, d.name));
+    end
+end
+
+function f = functionFile(funcHandle)
+% File that defines the function, or "" if it cannot be found (for example
+% a built-in function, whose "file" is the text "MATLAB built-in function").
+% A handle made before MATLAB noticed a newly written .m file records no
+% file, even later, so fall back to looking the function up by name.
+    f = string(functions(funcHandle).file);
+    if ~isfile(f)
+        f = string(which(func2str(funcHandle)));
+        if ~isfile(f)
+            f = "";
+        end
     end
 end

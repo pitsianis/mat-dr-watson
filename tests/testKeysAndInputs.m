@@ -63,6 +63,20 @@ function testKeysAndInputs(root)
         'Local function dependencies not tracked');
     pass('a local function works, and its file and helpers are tracked');
 
+    % A handle made right after its .m file is written records no file.
+    writeFile(fullfile(root, 'freshFn.m'), sprintf('function out = freshFn(p)\n    out = p;\nend\n'));
+    fresh = @freshFn;
+    [~, m] = produceOrLoad(fresh, struct('a', 1), c, Verbose=false);
+    assert(any(endsWith(string(m.dependencies), "freshFn.m")), 'freshFn.m was not tracked');
+    expectError(@() produceOrLoad(@sin, struct('a', 1), c), 'produceOrLoad:FunctionFileNotFound');
+    pass('a function file written just before the call is found; a function without a file raises a clear error');
+
+    emptyFile = fullfile(root, 'empty_input.txt');
+    writeFile(emptyFile, '');
+    [~, m] = produceOrLoad(@echoParams, struct('v', 'empty-extra'), c, ExtraFiles=emptyFile, Verbose=false);
+    assert(~m.fromCache && any(endsWith(string(m.dependencies), "empty_input.txt")), 'Empty ExtraFiles file not handled');
+    pass('an empty file in ExtraFiles is hashed without errors');
+
     if ~canUseParallelPool()
         fprintf('  SKIP: parfor test (no Parallel Computing Toolbox)\n');
         return;
@@ -80,6 +94,27 @@ function testKeysAndInputs(root)
     end
     assert(all(fromCache), 'Second parfor sweep should load every run from the cache');
     pass('parfor: the first sweep computes, the second loads from the cache');
+
+    % A worker that has already run a function keeps its old code in memory
+    % after the file is edited. The rerun must still use the new code.
+    pool = gcp();
+    writeFile(fullfile(root, 'workerSim.m'), sprintf('function out = workerSim(p)\n    out.v = workerHelper() * p.a;\nend\n'));
+    writeFile(fullfile(root, 'workerHelper.m'), sprintf('function v = workerHelper()\n    v = 10;\nend\n'));
+    wait(parfevalOnAll(pool, @rehash, 0));                           % let workers see the new files
+    wait(parfevalOnAll(pool, @workerSim, 1, struct('a', 1)));        % every worker loads the old code
+    [r, mm] = fetchOutputs(parfeval(pool, @produceOrLoad, 2, @workerSim, struct('a', 1), c, 'Verbose', false));
+    assert(r.v == 10 && ~mm.fromCache, 'Setup: expected a computed run with v = 10');
+    writeFile(fullfile(root, 'workerHelper.m'), sprintf('function v = workerHelper()\n    v = 20;\nend\n'));
+    [r, mm] = fetchOutputs(parfeval(pool, @produceOrLoad, 2, @workerSim, struct('a', 1), c, 'Verbose', false));
+    assert(~mm.fromCache, 'The code edit was not detected on the worker');
+    assert(r.v == 20, 'The worker reran the experiment with its old code (v = %d instead of 20)', r.v);
+    pass('after a code edit, a worker reruns the experiment with the new code, not its old copy');
+end
+
+function writeFile(p, txt)
+    fid = fopen(p, 'w');
+    fwrite(fid, txt, 'char');
+    fclose(fid);
 end
 
 function pass(msg)
