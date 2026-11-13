@@ -2,49 +2,6 @@
 
 A lightweight MATLAB toolkit replicating the core workflow of Julia's **[DrWatson.jl](https://github.com/JuliaDynamics/DrWatson.jl)**, using only base MATLAB and without requiring Git. The Parallel Computing Toolbox is optional.
 
-## Relation to DrWatson.jl
-
-[DrWatson.jl](https://github.com/JuliaDynamics/DrWatson.jl) ([documentation](https://juliadynamics.github.io/DrWatson.jl/stable/)) is a Julia package for managing scientific projects: parameter sweeps, saving and reloading simulation results, and collecting them for analysis. This toolkit brings its core workflow to MATLAB users who don't use Julia:
-
-| DrWatson.jl | This toolkit |
-|---|---|
-| `dict_list` | `dictList` |
-| `produce_or_load` | `produceOrLoad` |
-| `collect_results` | `collectResults` |
-| (no direct equivalent) | `manageCache`: check saved runs against the current code and delete stale ones |
-
-Differences:
-- **Code changes are detected automatically.** Results are keyed by the parameters *and* a hash of the code they depend on, so editing your code reruns the affected experiments. DrWatson instead can record the Git commit with each result, and reloads a saved result whenever its file exists.
-- **Not included:** project scaffolding (`initialize_project`, `datadir`, `plotsdir`), readable file names (`savename`), and Git tagging (`tagsave`).
-- This is an independent MATLAB project, not affiliated with DrWatson.jl or its authors.
-
-## Folder Layout
-
-```
-mat-dr-watson/
-├── toolbox/                The toolbox itself: the only folder that goes on the MATLAB path
-│   ├── dictList.m          Parameter grid: all combinations (DrWatson's dict_list)
-│   ├── produceOrLoad.m     Run an experiment or load its saved result (DrWatson's produce_or_load)
-│   ├── collectResults.m    All saved runs in one table (DrWatson's collect_results)
-│   ├── manageCache.m       List saved runs, check them against current code, clean stale ones
-│   ├── MatDrWatson.m       Overview shown by `help MatDrWatson`
-│   ├── Contents.m          Toolbox version
-│   └── private/            Internal helpers (hashing, dependency checks); never called directly
-├── examples/               Runnable demo (not on the path)
-│   ├── example_sweep.m     The demo script
-│   ├── simulateDecay.m     Example experiment function
-│   ├── computePhysicsStep.m  Helper it calls (edited by the demo to show change detection)
-│   └── experiment_manager/
-│       └── ExperimentFunctionTemplate.m  Template for using the toolbox from Experiment Manager
-├── tests/                  Automated tests (see "Running the Tests")
-├── setupMatDrWatson.m      Puts toolbox/ on the path
-└── buildToolbox.m          Builds release/MatDrWatson.mltbx for distribution
-```
-
-The examples and tests stay off the path on purpose: if they were on it, the example's `simulateDecay.m` could shadow, or be shadowed by, a student's own file of the same name.
-
----
-
 ## Installation
 
 1. Download **[MatDrWatson.mltbx](https://github.com/pitsianis/mat-dr-watson/releases/latest/download/MatDrWatson.mltbx)** from the [latest release](https://github.com/pitsianis/mat-dr-watson/releases/latest).
@@ -98,7 +55,7 @@ copyfile(exampleDir, "my_examples")
 
 ---
 
-## Quick Start
+## How to Use It
 
 ### 1. Generate a Parameter Grid (`dictList`)
 ```matlab
@@ -229,11 +186,18 @@ To use your own experiment function, replace `@simulateDecay` in the template, a
 
 ---
 
-## Running the Tests
+## Relation to DrWatson.jl
 
-From the repository folder:
-```matlab
-addpath tests
-runAllTests
-```
-The tests run in a temporary copy of the toolbox and examples, so your files and cache folders are never touched, and the toolbox does not need to be installed. They check code-change detection, `manageCache`, `collectResults`, cache keys, input validation, `parfor`, the Experiment Manager template, and the demo, and end with `All 4 test groups passed.` The `parfor` test is skipped without the Parallel Computing Toolbox, and the template test is skipped while a MATLAB project is open (creating its test project would close yours). Run them after changing any toolkit file.
+[DrWatson.jl](https://github.com/JuliaDynamics/DrWatson.jl) ([documentation](https://juliadynamics.github.io/DrWatson.jl/stable/)) is a Julia package for managing scientific projects: parameter sweeps, saving and reloading simulation results, and collecting them for analysis. This toolkit brings its core workflow to MATLAB users who don't use Julia:
+
+| DrWatson.jl | This toolkit |
+|---|---|
+| `dict_list` | `dictList` |
+| `produce_or_load` | `produceOrLoad` |
+| `collect_results` | `collectResults` |
+| (no direct equivalent) | `manageCache`: check saved runs against the current code and delete stale ones |
+
+Differences:
+- **Code changes are detected automatically.** Results are keyed by the parameters *and* a hash of the code they depend on, so editing your code reruns the affected experiments. DrWatson instead can record the Git commit with each result, and reloads a saved result whenever its file exists.
+- **Not included:** project scaffolding (`initialize_project`, `datadir`, `plotsdir`), readable file names (`savename`), and Git tagging (`tagsave`).
+- This is an independent MATLAB project, not affiliated with DrWatson.jl or its authors.
