@@ -1,6 +1,22 @@
 # MATLAB Reproducible Simulation Kit (`dictList` + `produceOrLoad` + `collectResults` + `manageCache`)
 
-A lightweight MATLAB toolkit replicating the core workflow of Julia's **DrWatson.jl**, using only base MATLAB and without requiring Git. The Parallel Computing Toolbox is optional.
+A lightweight MATLAB toolkit replicating the core workflow of Julia's **[DrWatson.jl](https://github.com/JuliaDynamics/DrWatson.jl)**, using only base MATLAB and without requiring Git. The Parallel Computing Toolbox is optional.
+
+## Relation to DrWatson.jl
+
+[DrWatson.jl](https://github.com/JuliaDynamics/DrWatson.jl) ([documentation](https://juliadynamics.github.io/DrWatson.jl/stable/)) is a Julia package for managing scientific projects: parameter sweeps, saving and reloading simulation results, and collecting them for analysis. This toolkit brings its core workflow to MATLAB users who don't use Julia:
+
+| DrWatson.jl | This toolkit |
+|---|---|
+| `dict_list` | `dictList` |
+| `produce_or_load` | `produceOrLoad` |
+| `collect_results` | `collectResults` |
+| (no direct equivalent) | `manageCache`: check saved runs against the current code and delete stale ones |
+
+Differences:
+- **Code changes are detected automatically.** Results are keyed by the parameters *and* a hash of the code they depend on, so editing your code reruns the affected experiments. DrWatson instead can record the Git commit with each result, and reloads a saved result whenever its file exists.
+- **Not included:** project scaffolding (`initialize_project`, `datadir`, `plotsdir`), readable file names (`savename`), and Git tagging (`tagsave`).
+- This is an independent MATLAB project, not affiliated with DrWatson.jl or its authors.
 
 ## Folder Layout
 

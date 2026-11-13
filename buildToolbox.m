@@ -32,7 +32,7 @@ function mltbxFile = buildToolbox(version)
     exampleFiles = dir(fullfile(root, "examples", "*.m"));
     opts.ToolboxFiles = [fullfile(root, "toolbox"), ...
                          string(fullfile({exampleFiles.folder}, {exampleFiles.name})), ...
-                         fullfile(root, "README_TUTORIAL.md")];
+                         fullfile(root, "README.md")];
     opts.ToolboxMatlabPath = fullfile(root, "toolbox");
 
     outDir = fullfile(root, "release");
