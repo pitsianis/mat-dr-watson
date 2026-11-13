@@ -30,5 +30,6 @@ Run from the repository root:
 - Run the tests before committing. For every bug fix, add a test and check that it fails without the fix.
 - Do not change the hash output for existing inputs (`serializeValue`, `hashFileList`, `sha256String`, `sha256File`): it would silently orphan every user's cache. If a change is unavoidable, increase `meta.keyVersion` in `produceOrLoad` and the check in `private/codeStatus.m`, so old files show as `OLD_FORMAT`.
 - Keep the `rehash` call in `produceOrLoad` before the experiment runs. Without it, parallel workers run stale code after an edit and save wrong results as current.
+- Keep the snapshot-path mapping (`liveProjectPaths` in `produceOrLoad`). Experiment Manager runs code from frozen copies in `<project>/Results/<result>/Snapshot/`; recording those paths would make every run look `CURRENT` forever.
 - The version appears in three places: `toolbox/Contents.m`, `toolbox/MatDrWatson.m`, and the default in `buildToolbox.m`.
 - Release: bump the version, run the tests, commit, push, run `buildToolbox`, then `gh release create vX.Y.Z release/MatDrWatson.mltbx`. The README links to `releases/latest`, so no README change is needed.

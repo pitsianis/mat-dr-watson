@@ -66,6 +66,7 @@ function [result, meta] = produceOrLoad(funcHandle, params, cacheDir, options)
     end
     extraFiles = absolutePaths(extraFiles);
     [codeHash, depFiles] = getDependencyHash(funcFile, extraFiles);
+    depFiles = liveProjectPaths(depFiles);   % record files the user edits, not snapshot copies
 
     % 3. Build deterministic cache key and file path
     funcName = regexprep(func2str(funcHandle), '[^a-zA-Z0-9_]', '_');
@@ -204,4 +205,19 @@ function f = functionFile(funcHandle)
             f = "";
         end
     end
+end
+
+function deps = liveProjectPaths(deps)
+% Experiment Manager runs each result from a frozen copy of the project files
+% in <project>/Results/<result>/Snapshot/. Snapshot files never change, so
+% runs that recorded them would look CURRENT forever, and every new result
+% would record new paths. Record the project's own file instead, so
+% manageCache and collectResults compare runs against the files the user
+% edits. The code hash still comes from the files that actually ran. A path
+% is mapped only when the project file exists.
+    deps = string(deps);
+    live = regexprep(deps, '([\\/])Results[\\/][^\\/]+[\\/]Snapshot[\\/]', '$1');
+    use = live ~= deps & isfile(live);
+    deps(use) = live(use);
+    deps = cellstr(unique(deps));
 end

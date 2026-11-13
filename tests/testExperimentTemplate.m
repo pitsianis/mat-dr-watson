@@ -6,6 +6,8 @@ function testExperimentTemplate(root)
 %   Manager app itself is not driven by this test.
 %   Called by runAllTests with root = the temporary copy of the project.
 
+    checkSnapshotPaths(root);
+
     if ~isempty(matlab.project.rootProject)
         % Creating a project would close the one you have open.
         fprintf('  SKIP: a MATLAB project is open; close it to run this test\n');
@@ -48,6 +50,49 @@ function testExperimentTemplate(root)
             'Expected ExperimentFunctionTemplate:NoProject, got %s', err.identifier);
     end
     pass('without a loaded project (as on parallel workers) it explains how to set cacheDir');
+end
+
+function checkSnapshotPaths(root)
+% Experiment Manager runs each result from a frozen copy of the project
+% files in <project>/Results/<result>/Snapshot/. Simulate that layout.
+    proj = fullfile(root, 'snapshot_project');
+    snap1 = fullfile(proj, 'Results', 'Experiment1_Result1_20260101T000000', 'Snapshot');
+    snap2 = fullfile(proj, 'Results', 'Experiment1_Result2_20260101T000100', 'Snapshot');
+    for folder = {proj, snap1, snap2}
+        mkdir(folder{1});
+        copyfile(fullfile(root, 'simulateDecay.m'), folder{1});
+        copyfile(fullfile(root, 'computePhysicsStep.m'), folder{1});
+    end
+    c = fullfile(proj, 'cache_data');
+    p = struct('x0', 10, 'T', 1, 'dt', 0.01, 'alpha', 0.5, 'tag', "baseline");
+    oldDir = pwd;
+    backToRoot = onCleanup(@() cd(oldDir)); %#ok<NASGU>
+
+    cd(snap1);   % like Experiment Manager running Result1
+    [~, m] = produceOrLoad(@simulateDecay, p, c, Verbose=false);
+    deps = string(m.dependencies);
+    assert(~m.fromCache && ~any(contains(deps, "Snapshot")) && all(startsWith(deps, proj)), ...
+        'Snapshot paths were recorded instead of the project files');
+    t = manageCache(c);
+    assert(t.Status == "CURRENT", 'Expected CURRENT, got %s', t.Status);
+    pass('runs from an Experiment Manager snapshot record the project''s own files');
+
+    cachedFile = fullfile(c, t.FileName);
+    before = dir(cachedFile).datenum;
+    pause(1.1);
+    cd(snap2);   % like Experiment Manager running Result2 with unchanged code
+    [~, m] = produceOrLoad(@simulateDecay, p, c, Verbose=false);
+    assert(m.fromCache, 'Unchanged code in a new snapshot should be a cache hit');
+    assert(dir(cachedFile).datenum == before, 'A cache hit from a new snapshot rewrote the cache file');
+    pass('a cache hit from a new snapshot leaves the cache file untouched');
+
+    helper = fullfile(proj, 'computePhysicsStep.m');
+    fid = fopen(helper, 'w');
+    fwrite(fid, strrep(fileread(fullfile(snap1, 'computePhysicsStep.m')), 'damping = 1.0;', 'damping = 1.25;'), 'char');
+    fclose(fid);
+    t = manageCache(c);
+    assert(t.Status == "STALE_CODE", 'Editing the project file should make the run STALE_CODE, got %s', t.Status);
+    pass('editing the project''s file (not the snapshot) marks the run STALE_CODE');
 end
 
 function pass(msg)
