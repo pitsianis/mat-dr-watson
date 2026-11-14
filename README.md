@@ -129,9 +129,11 @@ Each run remembers the files it depended on, so `manageCache` and `collectResult
 
 ## Using Experiment Manager (optional)
 
-MATLAB's [Experiment Manager](https://www.mathworks.com/help/matlab/ref/experimentmanager-app.html) app (included in MATLAB R2023b and newer) lets you define the parameter grid in a table, run the trials one at a time or in parallel, and browse the results, all without writing a loop. Combined with `produceOrLoad`, rerunning an experiment only recomputes the trials whose parameters or code changed; all others load instantly from disk.
+MATLAB's [Experiment Manager](https://www.mathworks.com/help/matlab/ref/experimentmanager-app.html) app (included in MATLAB R2023b and newer) lets you define the parameter grid in a table, run the trials, and browse the results, all without writing a loop. Combined with `produceOrLoad`, rerunning an experiment only recomputes the trials whose parameters or code changed; all others load instantly from disk.
 
 Experiment Manager replaces `dictList` and the loop. `produceOrLoad` does the saving and reloading, and `collectResults` and `manageCache` work on the saved runs as usual.
+
+**Run Experiment Manager in Sequential mode.** For parallel sweeps, use `parfor` or `parfeval` from a script or the Command Window instead, as `examples/example_sweep.m` does. Parallel runs from scripts on a local parallel pool are fully supported; Experiment Manager's parallel mode is not (see "Things to know" below).
 
 ### Setting it up with the example
 
@@ -157,7 +159,7 @@ To use your own experiment function, replace `@simulateDecay` in the template, a
 
 ### Things to know
 
-* **Parallel trials:** Experiment Manager's parallel workers don't have the project loaded, so the template's default cache folder (`<project root>/cache_data`) fails there with the error "No MATLAB project is loaded here". Before running in parallel (Mode **Simultaneous**), set `cacheDir` near the top of the experiment function to an absolute path, such as `"/Users/me/my_project/cache_data"`. In parallel mode, the Status that `manageCache` and `collectResults` report for these runs is not reliable yet. Results and caching are correct.
+* **Parallel mode (Simultaneous) is not recommended.** Experiment Manager's parallel workers don't have the project loaded, so the template's default cache folder fails there with the error "No MATLAB project is loaded here". If you use Simultaneous mode anyway, set `cacheDir` near the top of the experiment function to an absolute path, such as `"/Users/me/my_project/cache_data"`. Results and caching are then correct, but the Status that `manageCache` and `collectResults` report for those runs is not reliable, because the workers run temporary copies of your files.
 * **Text parameters:** Experiment Manager passes text as strings (`"baseline"`), while `spec.tag = {'baseline'}` in `dictList` passes chars (`'baseline'`), and the two get different cache keys. To share saved runs between scripts and Experiment Manager, use string arrays in scripts too: `spec.tag = ["baseline" "control"]`.
 * **Snapshots:** Experiment Manager runs each result from a frozen copy of your project files (in `Results/.../Snapshot/`). `produceOrLoad` records your project's own files instead, so editing them marks old runs as stale. Runs saved by version 0.2.3 or earlier recorded the snapshot copies and always show `CURRENT`: delete `cache_data` and rerun the experiment to fix that.
 * **Two copies of the outputs:** Experiment Manager keeps the values the experiment function returns in its own results, inside the project. The complete results of every run are in `cache_data`.
